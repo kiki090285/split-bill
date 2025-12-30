@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 
-// 這樣寫才能讓 Vercel 讀到您剛剛設定的環境變數
-const API_BASE = import.meta.env.VITE_API_BASE || "https://split-bill-v9je.onrender.com";
+// 直接寫死網址，這樣 TypeScript 就不會報錯，Vercel 也能編譯成功
+const API_BASE = "https://split-bill-v9je.onrender.com";
 
 // 定義與後端一致的資料類型
 interface Expense {
