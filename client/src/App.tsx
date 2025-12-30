@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 
+// 將這一行直接改為 Render 的網址
 const API_BASE = "https://split-bill-v9je.onrender.com";
 
 // 定義與後端一致的資料類型
