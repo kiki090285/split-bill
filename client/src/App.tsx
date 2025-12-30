@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import './App.css';
 
-// --- 翻譯與文字設定 ---
 const translations = {
   zh: {
     title: "分帳小幫手 💸",
@@ -18,29 +17,17 @@ const translations = {
     settlementPlan: "結算方案",
     saveStatus: "確認儲存",
     saved: "已儲存 ✓",
-    involvedAlert: "該成員已有相關支出，無法刪除！",
     errorServer: "無法連接伺服器，請檢查後端。"
   }
 };
 
-// --- 結算方案列組件 (包含下拉選單與按鈕) ---
 const ResultRow = ({ trans, t }: any) => {
   const [isSaved, setIsSaved] = useState(false);
-  
   return (
-    <div style={{ 
-      backgroundColor: isSaved ? '#f2f2f7' : '#fff',
-      padding: '15px',
-      borderRadius: '12px',
-      marginBottom: '10px',
-      border: '1px solid #d2d2d7',
-      transition: 'all 0.3s ease'
-    }}>
+    <div style={{ backgroundColor: isSaved ? '#f2f2f7' : '#fff', padding: '15px', borderRadius: '12px', marginBottom: '10px', border: '1px solid #d2d2d7' }}>
       <div style={{ fontSize: '16px', marginBottom: '10px', fontWeight: 'bold' }}>
         {trans.from} ➔ {trans.to}: <span style={{ color: '#4a69b3' }}>${trans.amount.toFixed(2)}</span>
       </div>
-      
-      {/* 下拉選單區域 */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
         <select disabled={isSaved} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #d2d2d7' }}>
           <option value="pending">⏳ 未付款</option>
@@ -52,21 +39,7 @@ const ResultRow = ({ trans, t }: any) => {
           <option value="transfer">🏦 轉帳</option>
         </select>
       </div>
-
-      {/* 儲存按鈕 */}
-      <button 
-        onClick={() => setIsSaved(!isSaved)}
-        style={{
-          width: '100%',
-          padding: '10px',
-          borderRadius: '8px',
-          border: 'none',
-          backgroundColor: isSaved ? '#34c759' : '#4a69b3',
-          color: 'white',
-          fontWeight: '600',
-          cursor: 'pointer'
-        }}
-      >
+      <button onClick={() => setIsSaved(!isSaved)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: 'none', backgroundColor: isSaved ? '#34c759' : '#4a69b3', color: 'white', fontWeight: '600', cursor: 'pointer' }}>
         {isSaved ? t.saved : t.saveStatus}
       </button>
     </div>
@@ -95,15 +68,13 @@ function App() {
     }
   };
 
+  const removePerson = (name: string) => setPeople(people.filter(p => p !== name));
+  const removeExpense = (index: number) => setExpenses(expenses.filter((_, i) => i !== index));
+
   const handleAddExpense = (e: React.FormEvent) => {
     e.preventDefault();
     if (expenseDesc && expenseAmount) {
-      setExpenses([...expenses, {
-        description: expenseDesc,
-        amount: Number(expenseAmount),
-        paidBy: expensePaidBy,
-        participants: people,
-      }]);
+      setExpenses([...expenses, { description: expenseDesc, amount: Number(expenseAmount), paidBy: expensePaidBy || people[0], participants: people }]);
       setExpenseDesc('');
       setExpenseAmount('');
     }
@@ -119,32 +90,11 @@ function App() {
       });
       const data = await response.json();
       setResults(data);
-    } catch (err) {
-      alert(t.errorServer);
-    } finally { setIsLoading(false); }
+    } catch (err) { alert(t.errorServer); } finally { setIsLoading(false); }
   };
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '12px',
-    borderRadius: '10px',
-    border: '1px solid #d2d2d7',
-    marginBottom: '10px',
-    boxSizing: 'border-box',
-    fontSize: '16px'
-  };
-
-  const buttonStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '12px',
-    borderRadius: '10px',
-    border: 'none',
-    backgroundColor: '#4a69b3',
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: '16px',
-    cursor: 'pointer'
-  };
+  const inputStyle: React.CSSProperties = { width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #d2d2d7', marginBottom: '10px', boxSizing: 'border-box', fontSize: '16px' };
+  const buttonStyle: React.CSSProperties = { width: '100%', padding: '12px', borderRadius: '10px', border: 'none', backgroundColor: '#4a69b3', color: 'white', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer' };
 
   return (
     <div style={{ maxWidth: '500px', margin: '0 auto', padding: '20px', fontFamily: '-apple-system, sans-serif' }}>
@@ -153,10 +103,18 @@ function App() {
       {/* 1. 成員管理 */}
       <section style={{ background: '#fff', padding: '20px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', marginBottom: '20px' }}>
         <h2 style={{ fontSize: '18px', marginBottom: '15px' }}>{t.manageMembers}</h2>
-        <form onSubmit={handleAddPerson}>
+        <form onSubmit={handleAddPerson} style={{ marginBottom: '15px' }}>
           <input value={newPerson} onChange={(e) => setNewPerson(e.target.value)} placeholder={t.enterName} style={inputStyle} />
           <button type="submit" style={buttonStyle}>{t.addMember}</button>
         </form>
+        {/* 補回成員清單 */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+          {people.map(p => (
+            <span key={p} style={{ background: '#f2f2f7', padding: '6px 12px', borderRadius: '20px', fontSize: '14px', display: 'flex', alignItems: 'center' }}>
+              {p} <button onClick={() => removePerson(p)} style={{ background: 'none', border: 'none', color: '#ff3b30', marginLeft: '5px', cursor: 'pointer' }}>×</button>
+            </span>
+          ))}
+        </div>
       </section>
 
       {/* 2. 新增支出 */}
@@ -173,18 +131,21 @@ function App() {
           </div>
           <button type="submit" style={buttonStyle}>{t.addToBill}</button>
         </form>
+        {/* 補回支出明細 */}
+        <div style={{ marginTop: '15px' }}>
+          {expenses.map((exp, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f2f2f7', fontSize: '14px' }}>
+              <span>{exp.description} ({exp.paidBy})</span>
+              <span>${exp.amount} <button onClick={() => removeExpense(i)} style={{ color: '#ff3b30', border: 'none', background: 'none', cursor: 'pointer' }}>×</button></span>
+            </div>
+          ))}
+        </div>
       </section>
 
-      {/* 計算按鈕 */}
-      <button 
-        onClick={handleCalculate} 
-        disabled={!isReadyToCalculate || isLoading} 
-        style={{ ...buttonStyle, backgroundColor: isReadyToCalculate ? '#4a69b3' : '#a1a1a6', padding: '15px', fontSize: '18px' }}
-      >
+      <button onClick={handleCalculate} disabled={!isReadyToCalculate || isLoading} style={{ ...buttonStyle, backgroundColor: isReadyToCalculate ? '#4a69b3' : '#a1a1a6', padding: '15px', fontSize: '18px' }}>
         {isLoading ? t.calculating : t.calculate}
       </button>
 
-      {/* 結算結果展示 */}
       {results && (
         <section style={{ background: '#f5f5f7', padding: '20px', borderRadius: '16px', marginTop: '20px' }}>
           <h2 style={{ fontSize: '18px', marginBottom: '15px' }}>{t.settlementPlan}</h2>
