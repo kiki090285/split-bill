@@ -1,160 +1,22 @@
-/* --- Apple Style Minimalist CSS --- */
-
+/* client/src/App.css */
 :root {
-  --my-blue: #4a69b3; /* 你指定的藍色 */
-  --apple-bg: #f5f5f7;
-  --apple-card: #ffffff;
-  --apple-text: #1d1d1f;
-  --apple-secondary-text: #86868b;
-  --apple-border: #d2d2d7;
-  --radius: 12px;
+  --my-blue: #4a69b3;
 }
 
 body {
-  background-color: var(--apple-bg);
-  color: var(--apple-text);
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  background-color: #f5f5f7;
   margin: 0;
   display: flex;
   justify-content: center;
-  padding: 20px;
 }
 
-.container {
-  width: 100%;
-  max-width: 500px;
-  background: var(--apple-card);
-  padding: 24px;
-  border-radius: 24px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+/* 強制所有輸入框與按鈕寬度一致，且不被 padding 撐破 */
+input, select, button {
+  box-sizing: border-box !important; 
+  width: 100% !important;
 }
 
-h1 {
-  font-size: 28px;
-  font-weight: 600;
-  text-align: center;
-  margin-bottom: 24px;
-  letter-spacing: -0.5px;
-}
-
-h2 {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--apple-secondary-text);
-  margin-top: 20px;
-  margin-bottom: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-/* --- 輸入框風格：確保寬度 100% --- */
-input[type="text"],
-input[type="number"],
-select {
-  width: 100%;
-  padding: 12px 16px;
-  margin: 8px 0;
-  border: 1px solid var(--apple-border);
-  border-radius: var(--radius);
-  background: #fbfbfd;
-  font-size: 16px;
-  box-sizing: border-box; /* 極重要：確保 padding 不會撐破寬度 */
-  outline: none;
-  transition: all 0.2s ease;
-}
-
-input:focus, select:focus {
-  border-color: var(--my-blue);
-  background: white;
-  box-shadow: 0 0 0 4px rgba(74, 105, 179, 0.1);
-}
-
-/* --- 按鈕風格 --- */
-button {
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.2s ease;
-}
-
-/* 語言切換小按鈕 */
-.lang-btn {
-  background: none;
-  border: 1px solid var(--apple-border);
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  color: var(--apple-secondary-text);
-}
-
-/* 主要操作按鈕：新增成員、加入帳單、計算 */
-button[type="submit"], 
-.calc-btn {
-  width: 100%;
-  background-color: var(--my-blue);
-  color: white;
-  border: none;
-  padding: 14px;
-  border-radius: var(--radius);
-  font-size: 16px;
-  font-weight: 600;
-  margin-top: 8px;
-  margin-bottom: 8px;
-}
-
-button[type="submit"]:hover,
-.calc-btn:hover:not(:disabled) {
-  background-color: #3b548f; /* 稍微深一點點的藍色 */
-  transform: translateY(-1px);
-}
-
-.calc-btn:disabled {
-  background-color: var(--apple-border);
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* 人員標籤 (Chips) */
-.chip-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.chip {
-  background: #f2f2f7;
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  border: 1px solid transparent;
-}
-
-.chip button {
-  background: none;
-  border: none;
-  margin-left: 6px;
-  color: #ff3b30;
-  font-size: 18px;
-  line-height: 1;
-  padding: 0;
-}
-
-/* 結算結果卡片樣式 */
-.result-card {
-  margin-top: 12px;
-  transition: transform 0.2s ease;
-}
-
-.result-card:active {
-  transform: scale(0.98);
-}
-
-/* 錯誤提示 */
-.error {
-  color: #ff3b30;
-  text-align: center;
-  font-size: 14px;
-  margin-top: 12px;
+/* 讓成員標籤不要變 100% 寬 */
+.chip-container span, .chip-container button {
+  width: auto !important;
 }
