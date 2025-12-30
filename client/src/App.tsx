@@ -30,8 +30,8 @@ const translations = {
     calculate: "幫我算算看！",
     calculating: "計算中...",
     settlementPlan: "結算方案",
-    saveStatus: "確認儲存",
-    saved: "已儲存 ✓",
+    saveStatus: "確認付款",
+    saved: "已付款 ✓",
     errorServer: "連線失敗，請檢查後端狀態。"
   },
   en: {
@@ -52,23 +52,40 @@ const translations = {
     calculate: "Calculate!",
     calculating: "Calculating...",
     settlementPlan: "Settlement Plan",
-    saveStatus: "Confirm",
-    saved: "Saved ✓",
+    saveStatus: "Mark as Paid",
+    saved: "Paid ✓",
     errorServer: "Connection error."
   }
 };
 
-const ResultRow = ({ trans, t }: any) => {
-  const [isSaved, setIsSaved] = useState(false);
+// 獨立的結算列組件
+const ResultRow = ({ trans, t, isPaid, onToggle }: any) => {
   return (
-    <div style={{ backgroundColor: isSaved ? '#f2f2f7' : '#fff', padding: '15px', borderRadius: '12px', marginBottom: '10px', border: '1px solid #d2d2d7' }}>
+    <div style={{ 
+      backgroundColor: isPaid ? '#f2f2f7' : '#fff', 
+      padding: '15px', 
+      borderRadius: '12px', 
+      marginBottom: '10px', 
+      border: '1px solid #d2d2d7',
+      transition: 'all 0.3s ease'
+    }}>
       <div style={{ fontSize: '16px', marginBottom: '10px', fontWeight: 'bold', color: '#43302e' }}>
         {trans.from} ➔ {trans.to}: <span style={{ color: '#4a69b3' }}>${trans.amount.toFixed(2)}</span>
       </div>
       <button 
-        onClick={() => setIsSaved(!isSaved)} 
-        style={{ width: '100%', padding: '10px', borderRadius: '8px', border: 'none', backgroundColor: isSaved ? '#34c759' : '#43302e', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}>
-        {isSaved ? t.saved : t.saveStatus}
+        onClick={onToggle} 
+        style={{ 
+          width: '100%', 
+          padding: '12px', 
+          borderRadius: '8px', 
+          border: 'none', 
+          backgroundColor: isPaid ? '#34c759' : '#43302e', 
+          color: 'white', 
+          fontWeight: 'bold', 
+          cursor: 'pointer',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        }}>
+        {isPaid ? t.saved : t.saveStatus}
       </button>
     </div>
   );
@@ -83,12 +100,47 @@ function App() {
   const [people, setPeople] = useState<string[]>([]);
   const [newPerson, setNewPerson] = useState('');
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [paidTransactions, setPaidTransactions] = useState<string[]>([]); // 紀錄哪些交易已付款
+  
   const [expenseDesc, setExpenseDesc] = useState('');
   const [expenseAmount, setExpenseAmount] = useState<number | ''>('');
   const [expensePaidBy, setExpensePaidBy] = useState<string>('');
   const [participants, setParticipants] = useState<string[]>([]); 
   const [results, setResults] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // 同步函式 (包含付款狀態)
+  const syncWithServer = useCallback(async (updatedPeople: string[], updatedExpenses: Expense[], updatedPaid: string[]) => {
+    if (!roomId) return;
+    try {
+      await fetch(`${API_BASE}/room/${roomId}/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          people: updatedPeople, 
+          expenses: updatedExpenses,
+          paidTransactions: updatedPaid 
+        }),
+      });
+    } catch (e) { console.error("Sync error:", e); }
+  }, [roomId]);
+
+  // 輪詢機制
+  useEffect(() => {
+    if (!roomId) return;
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`${API_BASE}/room/${roomId}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (JSON.stringify(data.people) !== JSON.stringify(people)) setPeople(data.people);
+          if (JSON.stringify(data.expenses) !== JSON.stringify(expenses)) setExpenses(data.expenses);
+          if (JSON.stringify(data.paidTransactions) !== JSON.stringify(paidTransactions)) setPaidTransactions(data.paidTransactions || []);
+        }
+      } catch (e) { console.error("Polling error:", e); }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [roomId, people, expenses, paidTransactions]);
 
   const createRoom = async () => {
     setIsLoading(true);
@@ -113,36 +165,11 @@ function App() {
         setRoomId(data.roomId);
         setPeople(data.people || []);
         setExpenses(data.expenses || []);
+        setPaidTransactions(data.paidTransactions || []);
       } else { alert("找不到群組，請確認邀請碼是否正確"); }
     } catch (e) { alert(t.errorServer); }
     setIsLoading(false);
   };
-
-  const syncWithServer = useCallback(async (updatedPeople: string[], updatedExpenses: Expense[]) => {
-    if (!roomId) return;
-    try {
-      await fetch(`${API_BASE}/room/${roomId}/sync`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ people: updatedPeople, expenses: updatedExpenses }),
-      });
-    } catch (e) { console.error("Sync error:", e); }
-  }, [roomId]);
-
-  useEffect(() => {
-    if (!roomId) return;
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch(`${API_BASE}/room/${roomId}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (JSON.stringify(data.people) !== JSON.stringify(people)) setPeople(data.people);
-          if (JSON.stringify(data.expenses) !== JSON.stringify(expenses)) setExpenses(data.expenses);
-        }
-      } catch (e) { console.error("Polling error:", e); }
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [roomId, people, expenses]);
 
   const handleAddPerson = (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,7 +177,7 @@ function App() {
       const updated = [...people, newPerson];
       setPeople(updated);
       setParticipants(updated);
-      syncWithServer(updated, expenses);
+      syncWithServer(updated, expenses, paidTransactions);
       setNewPerson('');
     }
   };
@@ -158,13 +185,13 @@ function App() {
   const removePerson = (name: string) => {
     const updated = people.filter(p => p !== name);
     setPeople(updated);
-    syncWithServer(updated, expenses);
+    syncWithServer(updated, expenses, paidTransactions);
   };
 
   const removeExpense = (index: number) => {
     const updated = expenses.filter((_, i) => i !== index);
     setExpenses(updated);
-    syncWithServer(people, updated);
+    syncWithServer(people, updated, paidTransactions);
   };
 
   const sectionStyle: React.CSSProperties = { background: '#c1d8e8', padding: '20px', borderRadius: '20px', marginBottom: '20px', boxShadow: '0 4px 10px rgba(0,0,0,0.05)' };
@@ -174,123 +201,87 @@ function App() {
   const LangBtn = () => (
     <button 
       onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')} 
-      style={{ 
-        position: 'absolute', 
-        top: '15px', 
-        right: '15px', 
-        background: 'white', 
-        border: '1px solid #d2d2d7', 
-        padding: '5px 0',
-        width: '60px',
-        borderRadius: '12px', 
-        fontSize: '12px', 
-        fontWeight: 'bold',
-        color: '#86868b', 
-        cursor: 'pointer',
-        boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
-        zIndex: 1000
-      }}>
+      style={{ position: 'absolute', top: '15px', right: '15px', background: 'white', border: '1px solid #d2d2d7', padding: '5px 0', width: '60px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold', color: '#86868b', cursor: 'pointer', zIndex: 1000 }}>
       {lang === 'zh' ? 'EN' : '中文'}
     </button>
   );
 
-  // --- 畫面邏輯開始 ---
-
-  // 畫面 1：首頁 (未進入群組)
   if (!roomId) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f5f7', padding: '20px', position: 'relative' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f5f7', padding: '20px' }}>
         <LangBtn />
         <div style={{ maxWidth: '400px', width: '100%', textAlign: 'center' }}>
           <h1 style={{ color: '#43302e', marginBottom: '40px' }}>{t.title}</h1>
           <button onClick={createRoom} style={{ ...mainBtnStyle, padding: '18px', fontSize: '18px', marginBottom: '25px' }}>✨ {t.createRoom}</button>
-          
           <div style={{ position: 'relative', height: '1px', backgroundColor: '#d2d2d7', margin: '30px 0' }}>
             <span style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', backgroundColor: '#f5f5f7', padding: '0 10px', color: '#86868b' }}>或</span>
           </div>
-          
-          <input 
-            placeholder={t.enterRoomId} 
-            value={inputRoomId} 
-            onChange={(e) => setInputRoomId(e.target.value.toUpperCase())} 
-            maxLength={6}
-            style={{ ...inputStyle, textAlign: 'center', fontSize: '24px', letterSpacing: '4px', textTransform: 'uppercase' }} 
-          />
+          <input placeholder={t.enterRoomId} value={inputRoomId} onChange={(e) => setInputRoomId(e.target.value.toUpperCase())} maxLength={6} style={{ ...inputStyle, textAlign: 'center', fontSize: '24px', letterSpacing: '4px' }} />
           <button onClick={joinRoom} style={{ ...mainBtnStyle, backgroundColor: '#86868b', marginTop: '10px' }}>{t.joinRoom}</button>
         </div>
       </div>
     );
   }
 
-  // 畫面 2：群組內頁
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f7', padding: '20px', position: 'relative' }}>
       <LangBtn />
-
-      <div style={{ maxWidth: '500px', margin: '0 auto', paddingTop: '40px', fontFamily: '-apple-system, sans-serif' }}>
-        
-        <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-start' }}>
-          <div style={{ backgroundColor: '#43302e', color: 'white', padding: '8px 16px', borderRadius: '20px', fontSize: '14px', fontWeight: 'bold', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+      <div style={{ maxWidth: '500px', margin: '0 auto', paddingTop: '40px' }}>
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{ backgroundColor: '#43302e', color: 'white', padding: '8px 16px', borderRadius: '20px', fontSize: '14px', fontWeight: 'bold', display: 'inline-block' }}>
             🏠 {t.roomIdIs}{roomId}
           </div>
         </div>
 
         <section style={sectionStyle}>
-          <h2 style={{ fontSize: '18px', marginBottom: '15px', color: '#43302e' }}>{t.manageMembers}</h2>
+          <h2 style={{ fontSize: '18px', marginBottom: '15px' }}>{t.manageMembers}</h2>
           <form onSubmit={handleAddPerson}>
             <input value={newPerson} onChange={(e) => setNewPerson(e.target.value)} placeholder={t.enterName} style={inputStyle} />
             <button type="submit" style={mainBtnStyle}>{t.addMember}</button>
           </form>
           <div style={{ marginTop: '15px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             {people.map(p => (
-              <span key={p} style={{ background: '#fff', padding: '6px 12px', borderRadius: '20px', fontSize: '14px', display: 'flex', alignItems: 'center', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
-                {p}
-                <button onClick={() => removePerson(p)} style={{ background: 'none', border: 'none', color: '#ff3b30', marginLeft: '6px', fontSize: '18px', cursor: 'pointer', width: 'auto' }}>×</button>
+              <span key={p} style={{ background: '#fff', padding: '6px 12px', borderRadius: '20px', fontSize: '14px', display: 'flex', alignItems: 'center' }}>
+                {p} <button onClick={() => removePerson(p)} style={{ border: 'none', color: '#ff3b30', marginLeft: '6px', cursor: 'pointer', background: 'none' }}>×</button>
               </span>
             ))}
           </div>
         </section>
 
         <section style={sectionStyle}>
-          <h2 style={{ fontSize: '18px', marginBottom: '15px', color: '#43302e' }}>{t.addExpense}</h2>
+          <h2 style={{ fontSize: '18px', marginBottom: '15px' }}>{t.addExpense}</h2>
           <form onSubmit={(e) => {
             e.preventDefault();
-            if (expenseDesc && expenseAmount && participants.length > 0) {
-              const newExp: Expense = { description: expenseDesc, amount: Number(expenseAmount), paidBy: expensePaidBy || people[0], participants: participants };
+            if (expenseDesc && expenseAmount) {
+              const newExp = { description: expenseDesc, amount: Number(expenseAmount), paidBy: expensePaidBy || people[0], participants };
               const updated = [...expenses, newExp];
               setExpenses(updated);
-              syncWithServer(people, updated);
+              syncWithServer(people, updated, paidTransactions);
               setExpenseDesc(''); setExpenseAmount('');
             }
           }}>
             <input placeholder={t.description} value={expenseDesc} onChange={(e) => setExpenseDesc(e.target.value)} style={inputStyle} />
             <input type="number" placeholder={t.amount} value={expenseAmount} onChange={(e) => setExpenseAmount(e.target.value === '' ? '' : Number(e.target.value))} style={inputStyle} />
-            
-            <div style={{ marginBottom: '15px' }}>
-              <span style={{ fontSize: '14px', color: '#43302e', fontWeight: '500' }}>{t.paidBy}</span>
-              <select value={expensePaidBy} onChange={(e) => setExpensePaidBy(e.target.value)} style={{ ...inputStyle, marginTop: '5px' }}>
-                <option value="">請選擇付款人</option>
-                {people.map(p => <option key={p} value={p}>{p}</option>)}
-              </select>
-
-              <span style={{ fontSize: '14px', color: '#43302e', fontWeight: '500', display: 'block', marginTop: '10px' }}>{t.splitWith}</span>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '8px' }}>
-                {people.map(p => (
-                  <label key={p} style={{ fontSize: '14px', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                    <input type="checkbox" checked={participants.includes(p)} onChange={() => setParticipants(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p])} style={{ marginRight: '5px', width: 'auto' }} />
-                    {p}
-                  </label>
-                ))}
-              </div>
+            <span style={{ fontSize: '14px' }}>{t.paidBy}</span>
+            <select value={expensePaidBy} onChange={(e) => setExpensePaidBy(e.target.value)} style={{ ...inputStyle, marginTop: '5px' }}>
+              <option value="">請選擇付款人</option>
+              {people.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+            <span style={{ fontSize: '14px', display: 'block', marginTop: '10px' }}>{t.splitWith}</span>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '8px', marginBottom: '15px' }}>
+              {people.map(p => (
+                <label key={p} style={{ fontSize: '14px', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={participants.includes(p)} onChange={() => setParticipants(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p])} /> {p}
+                </label>
+              ))}
             </div>
             <button type="submit" style={mainBtnStyle}>{t.addToBill}</button>
           </form>
-
           <div style={{ marginTop: '20px' }}>
             {expenses.map((exp, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.6)', padding: '10px', borderRadius: '8px', marginBottom: '8px' }}>
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', background: 'rgba(255,255,255,0.6)', padding: '10px', borderRadius: '8px', marginBottom: '8px' }}>
                 <span style={{ fontSize: '13px' }}>📍 {exp.description}: ${exp.amount} ({exp.paidBy})</span>
-                <button onClick={() => removeExpense(i)} style={{ border: 'none', background: 'none', color: '#ff3b30', cursor: 'pointer', fontSize: '16px', width: 'auto' }}>🗑️</button>
+                <button onClick={() => removeExpense(i)} style={{ border: 'none', color: '#ff3b30', cursor: 'pointer', background: 'none' }}>🗑️</button>
               </div>
             ))}
           </div>
@@ -310,15 +301,31 @@ function App() {
             } catch (e) { alert(t.errorServer); } finally { setIsLoading(false); }
           }} 
           disabled={people.length < 2 || expenses.length === 0 || isLoading} 
-          style={{ ...mainBtnStyle, padding: '15px', fontSize: '18px', marginBottom: '40px', backgroundColor: (people.length < 2 || expenses.length === 0) ? '#a1a1a6' : '#43302e' }}
-        >
+          style={{ ...mainBtnStyle, padding: '15px', backgroundColor: (people.length < 2 || expenses.length === 0) ? '#a1a1a6' : '#43302e' }}>
           {isLoading ? t.calculating : t.calculate}
         </button>
 
         {results && (
           <section style={{ background: '#fff', padding: '20px', borderRadius: '20px', marginBottom: '50px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}>
-            <h2 style={{ fontSize: '18px', marginBottom: '15px', color: '#43302e' }}>{t.settlementPlan}</h2>
-            {results.transactions.map((trans: any, i: number) => <ResultRow key={i} trans={trans} t={t} />)}
+            <h2 style={{ fontSize: '18px', marginBottom: '15px' }}>{t.settlementPlan}</h2>
+            {results.transactions.map((trans: any, i: number) => {
+              const transId = `${trans.from}-${trans.to}-${trans.amount.toFixed(2)}`;
+              return (
+                <ResultRow 
+                  key={i} 
+                  trans={trans} 
+                  t={t} 
+                  isPaid={paidTransactions.includes(transId)}
+                  onToggle={() => {
+                    const newPaid = paidTransactions.includes(transId)
+                      ? paidTransactions.filter(id => id !== transId)
+                      : [...paidTransactions, transId];
+                    setPaidTransactions(newPaid);
+                    syncWithServer(people, expenses, newPaid);
+                  }}
+                />
+              );
+            })}
           </section>
         )}
       </div>
