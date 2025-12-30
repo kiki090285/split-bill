@@ -48,11 +48,11 @@ const ResultRow = ({ trans, t }: any) => {
         {trans.from} ➔ {trans.to}: <span style={{ color: '#4a69b3' }}>${trans.amount.toFixed(2)}</span>
       </div>
       <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-        <select disabled={isSaved} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #d2d2d7' }}>
+        <select disabled={isSaved} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #d2d2d7', fontSize: '14px' }}>
           <option value="pending">⏳ {t.saveStatus === "Confirm" ? "Pending" : "未付款"}</option>
           <option value="paid">✅ {t.saveStatus === "Confirm" ? "Paid" : "已付款"}</option>
         </select>
-        <select disabled={isSaved} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #d2d2d7' }}>
+        <select disabled={isSaved} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #d2d2d7', fontSize: '14px' }}>
           <option value="line">🟢 LINE Pay</option>
           <option value="jkopay">🔴 街口支付</option>
           <option value="transfer">🏦 轉帳</option>
@@ -63,7 +63,7 @@ const ResultRow = ({ trans, t }: any) => {
         onClick={() => setIsSaved(!isSaved)} 
         style={{ 
           width: '100%', padding: '10px', borderRadius: '8px', border: 'none', 
-          backgroundColor: isSaved ? '#34c759' : '#43302e', color: 'white', fontWeight: 'bold' 
+          backgroundColor: isSaved ? '#34c759' : '#43302e', color: 'white', fontWeight: 'bold', cursor: 'pointer'
         }}
       >
         {isSaved ? t.saved : t.saveStatus}
@@ -109,11 +109,11 @@ function App() {
   };
 
   const sectionStyle: React.CSSProperties = { background: '#c1d8e8', padding: '20px', borderRadius: '20px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', marginBottom: '20px' };
-  const inputStyle: React.CSSProperties = { width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #d2d2d7', marginBottom: '10px', boxSizing: 'border-box', fontSize: '16px' };
+  const inputStyle: React.CSSProperties = { width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #d2d2d7', marginBottom: '10px', boxSizing: 'border-box', fontSize: '16px', backgroundColor: '#fff' };
   const mainBtnStyle: React.CSSProperties = { width: '100%', padding: '12px', borderRadius: '10px', border: 'none', backgroundColor: '#43302e', color: 'white', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer' };
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#ffeff1', padding: '20px' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f7', padding: '20px' }}>
       <div style={{ maxWidth: '500px', margin: '0 auto', fontFamily: '-apple-system, sans-serif' }}>
         
         {/* 語言切換 */}
@@ -125,7 +125,6 @@ function App() {
 
         <h1 style={{ textAlign: 'center', marginBottom: '30px', color: '#43302e' }}>{t.title}</h1>
 
-        {/* 1. 成員管理 */}
         <section style={sectionStyle}>
           <h2 style={{ fontSize: '18px', marginBottom: '15px', color: '#43302e' }}>{t.manageMembers}</h2>
           <form onSubmit={handleAddPerson}>
@@ -134,7 +133,7 @@ function App() {
           </form>
           <div style={{ marginTop: '15px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             {people.map(p => (
-              <span key={p} style={{ background: '#fff', padding: '6px 12px', borderRadius: '20px', fontSize: '14px', display: 'flex', alignItems: 'center', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
+              <span key={p} style={{ background: '#fff', padding: '6px 12px', borderRadius: '20px', fontSize: '14px', display: 'flex', alignItems: 'center', boxShadow: '0 2px 5px rgba(0,0,0,0.05)', color: '#43302e' }}>
                 {p}
                 <button onClick={() => removePerson(p)} style={{ background: 'none', border: 'none', color: '#ff3b30', marginLeft: '6px', cursor: 'pointer', fontSize: '18px', lineHeight: '1' }}>×</button>
               </span>
@@ -142,7 +141,6 @@ function App() {
           </div>
         </section>
 
-        {/* 2. 新增支出 */}
         <section style={sectionStyle}>
           <h2 style={{ fontSize: '18px', marginBottom: '15px', color: '#43302e' }}>{t.addExpense}</h2>
           <form onSubmit={(e) => {
@@ -174,10 +172,9 @@ function App() {
             <button type="submit" style={mainBtnStyle}>{t.addToBill}</button>
           </form>
 
-          {/* 已加入項目清單與刪除按鈕 */}
           <div style={{ marginTop: '20px' }}>
             {expenses.map((exp, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.5)', padding: '8px 12px', borderRadius: '8px', marginBottom: '8px' }}>
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.6)', padding: '8px 12px', borderRadius: '8px', marginBottom: '8px' }}>
                 <span style={{ fontSize: '13px', color: '#43302e' }}>📍 {exp.description}: ${exp.amount} ({exp.paidBy})</span>
                 <button onClick={() => removeExpense(i)} style={{ background: 'none', border: 'none', color: '#ff3b30', cursor: 'pointer', fontSize: '16px' }}>🗑️</button>
               </div>
@@ -185,7 +182,6 @@ function App() {
           </div>
         </section>
 
-        {/* 計算按鈕 */}
         <button 
           onClick={async () => {
             setIsLoading(true);
@@ -205,7 +201,6 @@ function App() {
           {isLoading ? t.calculating : t.calculate}
         </button>
 
-        {/* 結算結果 */}
         {results && (
           <section style={{ background: '#fff', padding: '20px', borderRadius: '20px', marginBottom: '50px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}>
             <h2 style={{ fontSize: '18px', marginBottom: '15px', color: '#43302e' }}>{t.settlementPlan}</h2>
