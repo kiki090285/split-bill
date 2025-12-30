@@ -1,7 +1,8 @@
-import express from 'express';
-import cors from 'cors';
-import mongoose from 'mongoose';
-import { calculateBalances, settleDebts, Expense } from './logic';
+// 改用 require 語法，這在 CommonJS 環境下最穩定
+const express = require('express');
+const cors = require('cors');
+const mongoose = require('mongoose');
+const { calculateBalances, settleDebts } = require('./logic');
 
 const app = express();
 // 免費版 Render 的 Port 必須從環境變數抓取
@@ -16,7 +17,7 @@ const mongoURI = process.env.MONGO_URI;
 if (mongoURI) {
   mongoose.connect(mongoURI)
     .then(() => console.log("✅ MongoDB Connected"))
-    .catch(err => console.error("❌ MongoDB Error:", err));
+    .catch((err: any) => console.error("❌ MongoDB Error:", err)); // 修正 err: any
 } else {
   console.warn("⚠️ Warning: MONGO_URI is not defined in Environment Variables");
 }
@@ -33,9 +34,9 @@ const Room = mongoose.models.Room || mongoose.model('Room', RoomSchema);
 
 // --- 路由 ---
 
-app.get('/', (req, res) => res.send('Server is running!'));
+app.get('/', (req: any, res: any) => res.send('Server is running!'));
 
-app.post('/create-room', async (req, res) => {
+app.post('/create-room', async (req: any, res: any) => {
   try {
     const roomId = Math.random().toString().slice(2, 8); 
     const room = new Room({ roomId });
@@ -46,7 +47,7 @@ app.post('/create-room', async (req, res) => {
   }
 });
 
-app.get('/room/:id', async (req, res) => {
+app.get('/room/:id', async (req: any, res: any) => {
   try {
     const room = await Room.findOne({ roomId: req.params.id });
     if (room) res.json(room);
@@ -56,7 +57,7 @@ app.get('/room/:id', async (req, res) => {
   }
 });
 
-app.post('/room/:id/sync', async (req, res) => {
+app.post('/room/:id/sync', async (req: any, res: any) => {
   try {
     const { people, expenses } = req.body;
     await Room.findOneAndUpdate({ roomId: req.params.id }, { people, expenses });
@@ -66,9 +67,9 @@ app.post('/room/:id/sync', async (req, res) => {
   }
 });
 
-app.post('/calculate', (req, res) => {
+app.post('/calculate', (req: any, res: any) => {
   try {
-    const { people, expenses }: { people: string[]; expenses: Expense[] } = req.body;
+    const { people, expenses } = req.body;
     const balances = calculateBalances(expenses, people);
     const transactions = settleDebts(balances);
     res.json({ balances, transactions });
