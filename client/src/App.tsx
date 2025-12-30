@@ -106,7 +106,6 @@ function App() {
     }
     setIsLoading(true);
     try {
-      // 確保搜尋時也是大寫
       const res = await fetch(`${API_BASE}/room/${inputRoomId.toUpperCase()}`);
       if (res.ok) {
         const data = await res.json();
@@ -171,18 +170,35 @@ function App() {
   const inputStyle: React.CSSProperties = { width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #d2d2d7', marginBottom: '10px', boxSizing: 'border-box', fontSize: '16px' };
   const mainBtnStyle: React.CSSProperties = { width: '100%', padding: '12px', borderRadius: '10px', border: 'none', backgroundColor: '#43302e', color: 'white', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer' };
 
+  // 語言切換按鈕的統一組件
+  const LangBtn = () => (
+    <button 
+      onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')} 
+      style={{ 
+        position: 'absolute', 
+        top: '15px', 
+        right: '15px', 
+        background: 'white', 
+        border: '1px solid #d2d2d7', 
+        padding: '4px 10px', 
+        borderRadius: '12px', 
+        fontSize: '11px', 
+        color: '#86868b', 
+        cursor: 'pointer',
+        boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
+        zIndex: 100 
+      }}>
+      {lang === 'zh' ? 'EN' : '中文'}
+    </button>
+  );
+
   // -----------------------------------------------------------------
   // 畫面 1：首頁 (未進入群組)
   // -----------------------------------------------------------------
   if (!roomId) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f5f7', padding: '20px', position: 'relative' }}>
-        {/* 右上角語言按鈕 */}
-        <button 
-          onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')} 
-          style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(255,255,255,0.8)', border: '1px solid #d2d2d7', padding: '4px 10px', borderRadius: '15px', fontSize: '11px', color: '#86868b', cursor: 'pointer' }}>
-          {lang === 'zh' ? 'English' : '中文'}
-        </button>
+        <LangBtn />
 
         <div style={{ maxWidth: '400px', width: '100%', textAlign: 'center' }}>
           <h1 style={{ color: '#43302e', marginBottom: '40px' }}>{t.title}</h1>
@@ -195,7 +211,6 @@ function App() {
           <input 
             placeholder={t.enterRoomId} 
             value={inputRoomId} 
-            // 修正：允許輸入英文字母並轉大寫
             onChange={(e) => setInputRoomId(e.target.value.toUpperCase())} 
             maxLength={6}
             style={{ ...inputStyle, textAlign: 'center', fontSize: '24px', letterSpacing: '4px', textTransform: 'uppercase' }} 
@@ -211,17 +226,12 @@ function App() {
   // -----------------------------------------------------------------
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f7', padding: '20px', position: 'relative' }}>
-      {/* 右上角語言按鈕 */}
-      <button 
-        onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')} 
-        style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(255,255,255,0.8)', border: '1px solid #d2d2d7', padding: '4px 10px', borderRadius: '15px', fontSize: '11px', color: '#86868b', cursor: 'pointer', zIndex: 10 }}>
-        {lang === 'zh' ? 'English' : '中文'}
-      </button>
+      <LangBtn />
 
       <div style={{ maxWidth: '500px', margin: '0 auto', fontFamily: '-apple-system, sans-serif' }}>
         
-        <div style={{ marginBottom: '20px' }}>
-          <div style={{ display: 'inline-block', backgroundColor: '#43302e', color: 'white', padding: '6px 15px', borderRadius: '20px', fontSize: '14px', fontWeight: 'bold' }}>
+        <div style={{ marginBottom: '20px', display: 'flex' }}>
+          <div style={{ backgroundColor: '#43302e', color: 'white', padding: '6px 15px', borderRadius: '20px', fontSize: '14px', fontWeight: 'bold', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
             🏠 {t.roomIdIs}{roomId}
           </div>
         </div>
