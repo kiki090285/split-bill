@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 
-// 將這一行直接改為 Render 的網址
-const API_BASE = "https://split-bill-v9je.onrender.com";
+// 這樣寫才能讓 Vercel 讀到您剛剛設定的環境變數
+const API_BASE = import.meta.env.VITE_API_BASE || "https://split-bill-v9je.onrender.com";
 
 // 定義與後端一致的資料類型
 interface Expense {
