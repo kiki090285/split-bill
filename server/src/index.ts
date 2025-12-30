@@ -71,12 +71,13 @@ app.get('/', (req: any, res: any) => {
 
 app.post('/create-room', async (req: any, res: any) => {
   try {
-    const roomId = Math.random().toString().slice(2, 8); 
-    const room = new Room({ roomId });
+    const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const room = new Room({ roomId, people: [], expenses: [] });
     await room.save();
     res.json({ roomId });
-  } catch (error) {
-    res.status(500).json({ error: 'Create Room Failed' });
+  } catch (error: any) {
+    // 關鍵：這行會讓你在瀏覽器看到真正的報錯原因
+    res.status(500).json({ error: error.message });
   }
 });
 
