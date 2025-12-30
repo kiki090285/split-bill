@@ -170,7 +170,7 @@ function App() {
   const inputStyle: React.CSSProperties = { width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #d2d2d7', marginBottom: '10px', boxSizing: 'border-box', fontSize: '16px' };
   const mainBtnStyle: React.CSSProperties = { width: '100%', padding: '12px', borderRadius: '10px', border: 'none', backgroundColor: '#43302e', color: 'white', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer' };
 
-  // 語言切換按鈕的統一組件
+  // 語言切換按鈕：強制固定寬度與右上角位置
   const LangBtn = () => (
     <button 
       onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')} 
@@ -180,17 +180,35 @@ function App() {
         right: '15px', 
         background: 'white', 
         border: '1px solid #d2d2d7', 
-        padding: '4px 10px', 
+        padding: '5px 0',          // 上下留點空間
+        width: '60px',             // 強制固定寬度，就不會橫跨整個螢幕
         borderRadius: '12px', 
-        fontSize: '11px', 
+        fontSize: '12px', 
+        fontWeight: 'bold',
         color: '#86868b', 
         cursor: 'pointer',
-        boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
-        zIndex: 100 
+        boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
+        zIndex: 1000               // 確保在最前方
       }}>
       {lang === 'zh' ? 'EN' : '中文'}
     </button>
   );
+
+  // 畫面 2：群組內頁回傳部分
+  return (
+    <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f7', padding: '20px', position: 'relative' }}>
+      <LangBtn />
+
+      <div style={{ maxWidth: '500px', margin: '0 auto', paddingTop: '40px', fontFamily: '-apple-system, sans-serif' }}>
+        
+        {/* 邀請碼標籤：寬度自動，不佔滿整行 */}
+        <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-start' }}>
+          <div style={{ backgroundColor: '#43302e', color: 'white', padding: '8px 16px', borderRadius: '20px', fontSize: '14px', fontWeight: 'bold', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+            🏠 {t.roomIdIs}{roomId}
+          </div>
+        </div>
+        
+        {/* 後續 section 保持不變... */}
 
   // -----------------------------------------------------------------
   // 畫面 1：首頁 (未進入群組)
