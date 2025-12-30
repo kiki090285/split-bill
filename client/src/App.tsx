@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 
+// 確保這裡是固定網址，避免 Vercel 部署時因環境變數報錯
 const API_BASE = "https://split-bill-v9je.onrender.com";
 
 interface Expense {
@@ -170,7 +171,6 @@ function App() {
   const inputStyle: React.CSSProperties = { width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #d2d2d7', marginBottom: '10px', boxSizing: 'border-box', fontSize: '16px' };
   const mainBtnStyle: React.CSSProperties = { width: '100%', padding: '12px', borderRadius: '10px', border: 'none', backgroundColor: '#43302e', color: 'white', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer' };
 
-  // 語言切換按鈕：強制固定寬度與右上角位置
   const LangBtn = () => (
     <button 
       onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')} 
@@ -180,44 +180,27 @@ function App() {
         right: '15px', 
         background: 'white', 
         border: '1px solid #d2d2d7', 
-        padding: '5px 0',          // 上下留點空間
-        width: '60px',             // 強制固定寬度，就不會橫跨整個螢幕
+        padding: '5px 0',
+        width: '60px',
         borderRadius: '12px', 
         fontSize: '12px', 
         fontWeight: 'bold',
         color: '#86868b', 
         cursor: 'pointer',
         boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
-        zIndex: 1000               // 確保在最前方
+        zIndex: 1000
       }}>
       {lang === 'zh' ? 'EN' : '中文'}
     </button>
   );
 
-  // 畫面 2：群組內頁回傳部分
-  return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f7', padding: '20px', position: 'relative' }}>
-      <LangBtn />
+  // --- 畫面邏輯開始 ---
 
-      <div style={{ maxWidth: '500px', margin: '0 auto', paddingTop: '40px', fontFamily: '-apple-system, sans-serif' }}>
-        
-        {/* 邀請碼標籤：寬度自動，不佔滿整行 */}
-        <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-start' }}>
-          <div style={{ backgroundColor: '#43302e', color: 'white', padding: '8px 16px', borderRadius: '20px', fontSize: '14px', fontWeight: 'bold', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-            🏠 {t.roomIdIs}{roomId}
-          </div>
-        </div>
-        
-        {/* 後續 section 保持不變... */}
-
-  // -----------------------------------------------------------------
   // 畫面 1：首頁 (未進入群組)
-  // -----------------------------------------------------------------
   if (!roomId) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f5f7', padding: '20px', position: 'relative' }}>
         <LangBtn />
-
         <div style={{ maxWidth: '400px', width: '100%', textAlign: 'center' }}>
           <h1 style={{ color: '#43302e', marginBottom: '40px' }}>{t.title}</h1>
           <button onClick={createRoom} style={{ ...mainBtnStyle, padding: '18px', fontSize: '18px', marginBottom: '25px' }}>✨ {t.createRoom}</button>
@@ -239,17 +222,15 @@ function App() {
     );
   }
 
-  // -----------------------------------------------------------------
   // 畫面 2：群組內頁
-  // -----------------------------------------------------------------
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f7', padding: '20px', position: 'relative' }}>
       <LangBtn />
 
-      <div style={{ maxWidth: '500px', margin: '0 auto', fontFamily: '-apple-system, sans-serif' }}>
+      <div style={{ maxWidth: '500px', margin: '0 auto', paddingTop: '40px', fontFamily: '-apple-system, sans-serif' }}>
         
-        <div style={{ marginBottom: '20px', display: 'flex' }}>
-          <div style={{ backgroundColor: '#43302e', color: 'white', padding: '6px 15px', borderRadius: '20px', fontSize: '14px', fontWeight: 'bold', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+        <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-start' }}>
+          <div style={{ backgroundColor: '#43302e', color: 'white', padding: '8px 16px', borderRadius: '20px', fontSize: '14px', fontWeight: 'bold', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
             🏠 {t.roomIdIs}{roomId}
           </div>
         </div>
@@ -264,7 +245,7 @@ function App() {
             {people.map(p => (
               <span key={p} style={{ background: '#fff', padding: '6px 12px', borderRadius: '20px', fontSize: '14px', display: 'flex', alignItems: 'center', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
                 {p}
-                <button onClick={() => removePerson(p)} style={{ background: 'none', border: 'none', color: '#ff3b30', marginLeft: '6px', fontSize: '18px', cursor: 'pointer' }}>×</button>
+                <button onClick={() => removePerson(p)} style={{ background: 'none', border: 'none', color: '#ff3b30', marginLeft: '6px', fontSize: '18px', cursor: 'pointer', width: 'auto' }}>×</button>
               </span>
             ))}
           </div>
@@ -296,7 +277,7 @@ function App() {
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '8px' }}>
                 {people.map(p => (
                   <label key={p} style={{ fontSize: '14px', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                    <input type="checkbox" checked={participants.includes(p)} onChange={() => setParticipants(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p])} style={{ marginRight: '5px' }} />
+                    <input type="checkbox" checked={participants.includes(p)} onChange={() => setParticipants(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p])} style={{ marginRight: '5px', width: 'auto' }} />
                     {p}
                   </label>
                 ))}
@@ -309,7 +290,7 @@ function App() {
             {expenses.map((exp, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.6)', padding: '10px', borderRadius: '8px', marginBottom: '8px' }}>
                 <span style={{ fontSize: '13px' }}>📍 {exp.description}: ${exp.amount} ({exp.paidBy})</span>
-                <button onClick={() => removeExpense(i)} style={{ border: 'none', background: 'none', color: '#ff3b30', cursor: 'pointer', fontSize: '16px' }}>🗑️</button>
+                <button onClick={() => removeExpense(i)} style={{ border: 'none', background: 'none', color: '#ff3b30', cursor: 'pointer', fontSize: '16px', width: 'auto' }}>🗑️</button>
               </div>
             ))}
           </div>
