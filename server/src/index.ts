@@ -8,6 +8,14 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// 加入這個，讓您點開網址時不會看到空白
+app.get('/', (req: any, res: any) => {
+  res.send('✅ 後端伺服器已成功啟動！');
+});
+
+// 為了保證 API 能被前端呼叫，請確認這行存在
+app.use(cors());
+
 // --- MongoDB 連線 ---
 const mongoURI = process.env.MONGO_URI; 
 
