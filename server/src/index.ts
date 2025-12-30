@@ -83,11 +83,17 @@ app.post('/create-room', async (req: any, res: any) => {
 
 app.get('/room/:id', async (req: any, res: any) => {
   try {
-    const room = await Room.findOne({ roomId: req.params.id });
-    if (room) res.json(room);
-    else res.status(404).json({ error: 'Not Found' });
+    // 強制將輸入轉為大寫，確保跟資料庫存的一致
+    const roomId = req.params.id.toUpperCase();
+    const room = await Room.findOne({ roomId: roomId });
+    
+    if (room) {
+      res.json(room);
+    } else {
+      res.status(404).json({ error: '找不到該群組，請檢查邀請碼是否正確' });
+    }
   } catch (error) {
-    res.status(500).json({ error: 'Server Error' });
+    res.status(500).json({ error: '伺服器錯誤' });
   }
 });
 
