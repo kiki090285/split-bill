@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 
-// 直接寫死網址，這樣 TypeScript 就不會報錯，Vercel 也能編譯成功
 const API_BASE = "https://split-bill-v9je.onrender.com";
 
-// 定義與後端一致的資料類型
 interface Expense {
   description: string;
   amount: number;
@@ -17,7 +15,7 @@ const translations = {
     title: "分帳小幫手 💸",
     createRoom: "建立新群組",
     joinRoom: "加入群組",
-    enterRoomId: "輸入 6 位數邀請碼",
+    enterRoomId: "輸入 6 位邀請碼",
     roomIdIs: "邀請碼：",
     manageMembers: "1. 成員管理",
     enterName: "輸入姓名",
@@ -91,7 +89,6 @@ function App() {
   const [results, setResults] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // 建立房間
   const createRoom = async () => {
     setIsLoading(true);
     try {
@@ -102,26 +99,25 @@ function App() {
     setIsLoading(false);
   };
 
-  // 加入房間
   const joinRoom = async () => {
     if (inputRoomId.length !== 6) {
-      alert("請輸入 6 位數字邀請碼");
+      alert("請輸入完整的 6 位邀請碼");
       return;
     }
     setIsLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/room/${inputRoomId}`);
+      // 確保搜尋時也是大寫
+      const res = await fetch(`${API_BASE}/room/${inputRoomId.toUpperCase()}`);
       if (res.ok) {
         const data = await res.json();
         setRoomId(data.roomId);
         setPeople(data.people || []);
         setExpenses(data.expenses || []);
-      } else { alert("找不到房間，請確認邀請碼正確"); }
+      } else { alert("找不到群組，請確認邀請碼是否正確"); }
     } catch (e) { alert(t.errorServer); }
     setIsLoading(false);
   };
 
-  // 同步資料至後端
   const syncWithServer = useCallback(async (updatedPeople: string[], updatedExpenses: Expense[]) => {
     if (!roomId) return;
     try {
@@ -133,7 +129,6 @@ function App() {
     } catch (e) { console.error("Sync error:", e); }
   }, [roomId]);
 
-  // 定時從後端拉取更新
   useEffect(() => {
     if (!roomId) return;
     const interval = setInterval(async () => {
@@ -141,7 +136,6 @@ function App() {
         const res = await fetch(`${API_BASE}/room/${roomId}`);
         if (res.ok) {
           const data = await res.json();
-          // 比對資料，若有不同才更新 state
           if (JSON.stringify(data.people) !== JSON.stringify(people)) setPeople(data.people);
           if (JSON.stringify(data.expenses) !== JSON.stringify(expenses)) setExpenses(data.expenses);
         }
@@ -177,21 +171,34 @@ function App() {
   const inputStyle: React.CSSProperties = { width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #d2d2d7', marginBottom: '10px', boxSizing: 'border-box', fontSize: '16px' };
   const mainBtnStyle: React.CSSProperties = { width: '100%', padding: '12px', borderRadius: '10px', border: 'none', backgroundColor: '#43302e', color: 'white', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer' };
 
+  // -----------------------------------------------------------------
+  // 畫面 1：首頁 (未進入群組)
+  // -----------------------------------------------------------------
   if (!roomId) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f5f7', padding: '20px' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f5f7', padding: '20px', position: 'relative' }}>
+        {/* 右上角語言按鈕 */}
+        <button 
+          onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')} 
+          style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(255,255,255,0.8)', border: '1px solid #d2d2d7', padding: '4px 10px', borderRadius: '15px', fontSize: '11px', color: '#86868b', cursor: 'pointer' }}>
+          {lang === 'zh' ? 'English' : '中文'}
+        </button>
+
         <div style={{ maxWidth: '400px', width: '100%', textAlign: 'center' }}>
           <h1 style={{ color: '#43302e', marginBottom: '40px' }}>{t.title}</h1>
           <button onClick={createRoom} style={{ ...mainBtnStyle, padding: '18px', fontSize: '18px', marginBottom: '25px' }}>✨ {t.createRoom}</button>
+          
           <div style={{ position: 'relative', height: '1px', backgroundColor: '#d2d2d7', margin: '30px 0' }}>
             <span style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', backgroundColor: '#f5f5f7', padding: '0 10px', color: '#86868b' }}>或</span>
           </div>
+          
           <input 
             placeholder={t.enterRoomId} 
             value={inputRoomId} 
-            onChange={(e) => setInputRoomId(e.target.value.replace(/\D/g,''))} 
+            // 修正：允許輸入英文字母並轉大寫
+            onChange={(e) => setInputRoomId(e.target.value.toUpperCase())} 
             maxLength={6}
-            style={{ ...inputStyle, textAlign: 'center', fontSize: '24px', letterSpacing: '4px' }} 
+            style={{ ...inputStyle, textAlign: 'center', fontSize: '24px', letterSpacing: '4px', textTransform: 'uppercase' }} 
           />
           <button onClick={joinRoom} style={{ ...mainBtnStyle, backgroundColor: '#86868b', marginTop: '10px' }}>{t.joinRoom}</button>
         </div>
@@ -199,17 +206,24 @@ function App() {
     );
   }
 
+  // -----------------------------------------------------------------
+  // 畫面 2：群組內頁
+  // -----------------------------------------------------------------
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f7', padding: '20px' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f7', padding: '20px', position: 'relative' }}>
+      {/* 右上角語言按鈕 */}
+      <button 
+        onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')} 
+        style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(255,255,255,0.8)', border: '1px solid #d2d2d7', padding: '4px 10px', borderRadius: '15px', fontSize: '11px', color: '#86868b', cursor: 'pointer', zIndex: 10 }}>
+        {lang === 'zh' ? 'English' : '中文'}
+      </button>
+
       <div style={{ maxWidth: '500px', margin: '0 auto', fontFamily: '-apple-system, sans-serif' }}>
         
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <div style={{ backgroundColor: '#43302e', color: 'white', padding: '6px 15px', borderRadius: '20px', fontSize: '14px', fontWeight: 'bold' }}>
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{ display: 'inline-block', backgroundColor: '#43302e', color: 'white', padding: '6px 15px', borderRadius: '20px', fontSize: '14px', fontWeight: 'bold' }}>
             🏠 {t.roomIdIs}{roomId}
           </div>
-          <button onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')} style={{ background: '#fff', border: '1px solid #d2d2d7', padding: '5px 12px', borderRadius: '20px', fontSize: '12px' }}>
-            {lang === 'zh' ? 'English' : '中文'}
-          </button>
         </div>
 
         <section style={sectionStyle}>
