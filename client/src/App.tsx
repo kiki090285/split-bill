@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import './App.css';
 
-// --- 支援中英雙語 ---
 const translations = {
   zh: {
     title: "分帳小幫手 💸",
@@ -45,22 +44,28 @@ const ResultRow = ({ trans, t }: any) => {
   const [isSaved, setIsSaved] = useState(false);
   return (
     <div style={{ backgroundColor: isSaved ? '#f2f2f7' : '#fff', padding: '15px', borderRadius: '12px', marginBottom: '10px', border: '1px solid #d2d2d7' }}>
-      <div style={{ fontSize: '16px', marginBottom: '10px', fontWeight: 'bold' }}>
+      <div style={{ fontSize: '16px', marginBottom: '10px', fontWeight: 'bold', color: '#43302e' }}>
         {trans.from} ➔ {trans.to}: <span style={{ color: '#4a69b3' }}>${trans.amount.toFixed(2)}</span>
       </div>
       <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-        <select disabled={isSaved} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #d2d2d7', fontSize: '14px' }}>
+        <select disabled={isSaved} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #d2d2d7' }}>
           <option value="pending">⏳ {t.saveStatus === "Confirm" ? "Pending" : "未付款"}</option>
           <option value="paid">✅ {t.saveStatus === "Confirm" ? "Paid" : "已付款"}</option>
         </select>
-        <select disabled={isSaved} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #d2d2d7', fontSize: '14px' }}>
+        <select disabled={isSaved} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #d2d2d7' }}>
           <option value="line">🟢 LINE Pay</option>
           <option value="jkopay">🔴 街口支付</option>
-          <option value="transfer">🏦 轉帳 / Bank</option>
-          <option value="cash">💵 現金 / Cash</option>
+          <option value="transfer">🏦 轉帳</option>
+          <option value="cash">💵 現金</option>
         </select>
       </div>
-      <button onClick={() => setIsSaved(!isSaved)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: 'none', backgroundColor: isSaved ? '#34c759' : '#4a69b3', color: 'white', fontWeight: '600', cursor: 'pointer' }}>
+      <button 
+        onClick={() => setIsSaved(!isSaved)} 
+        style={{ 
+          width: '100%', padding: '10px', borderRadius: '8px', border: 'none', 
+          backgroundColor: isSaved ? '#34c759' : '#43302e', color: 'white', fontWeight: 'bold' 
+        }}
+      >
         {isSaved ? t.saved : t.saveStatus}
       </button>
     </div>
@@ -94,90 +99,120 @@ function App() {
     }
   };
 
+  const removePerson = (name: string) => {
+    setPeople(people.filter(p => p !== name));
+    setParticipants(participants.filter(p => p !== name));
+  };
+
+  const removeExpense = (index: number) => {
+    setExpenses(expenses.filter((_, i) => i !== index));
+  };
+
+  const sectionStyle: React.CSSProperties = { background: '#c1d8e8', padding: '20px', borderRadius: '20px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', marginBottom: '20px' };
   const inputStyle: React.CSSProperties = { width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #d2d2d7', marginBottom: '10px', boxSizing: 'border-box', fontSize: '16px' };
-  const buttonStyle: React.CSSProperties = { width: '100%', padding: '12px', borderRadius: '10px', border: 'none', backgroundColor: '#4a69b3', color: 'white', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer' };
+  const mainBtnStyle: React.CSSProperties = { width: '100%', padding: '12px', borderRadius: '10px', border: 'none', backgroundColor: '#43302e', color: 'white', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer' };
 
   return (
-    <div style={{ maxWidth: '500px', margin: '0 auto', padding: '20px', fontFamily: '-apple-system, sans-serif' }}>
-      {/* 語言切換按鈕 */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>
-        <button onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')} style={{ background: 'none', border: '1px solid #d2d2d7', padding: '5px 12px', borderRadius: '20px', fontSize: '12px', color: '#86868b', cursor: 'pointer' }}>
-          {lang === 'zh' ? 'English' : '中文'}
-        </button>
-      </div>
-
-      <h1 style={{ textAlign: 'center', marginBottom: '30px' }}>{t.title}</h1>
-
-      <section style={{ background: '#fff', padding: '20px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', marginBottom: '20px' }}>
-        <h2 style={{ fontSize: '18px', marginBottom: '15px' }}>{t.manageMembers}</h2>
-        <form onSubmit={handleAddPerson}>
-          <input value={newPerson} onChange={(e) => setNewPerson(e.target.value)} placeholder={t.enterName} style={inputStyle} />
-          <button type="submit" style={buttonStyle}>{t.addMember}</button>
-        </form>
-        <div style={{ marginTop: '10px', display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
-          {people.map(p => <span key={p} style={{ background: '#f2f2f7', padding: '5px 10px', borderRadius: '15px', fontSize: '13px' }}>{p}</span>)}
+    <div style={{ minHeight: '100vh', backgroundColor: '#ffeff1', padding: '20px' }}>
+      <div style={{ maxWidth: '500px', margin: '0 auto', fontFamily: '-apple-system, sans-serif' }}>
+        
+        {/* 語言切換 */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '15px' }}>
+          <button onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')} style={{ background: '#fff', border: '1px solid #d2d2d7', padding: '6px 15px', borderRadius: '20px', fontSize: '13px', cursor: 'pointer', color: '#43302e' }}>
+            {lang === 'zh' ? 'English' : '中文'}
+          </button>
         </div>
-      </section>
 
-      <section style={{ background: '#fff', padding: '20px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', marginBottom: '20px' }}>
-        <h2 style={{ fontSize: '18px', marginBottom: '15px' }}>{t.addExpense}</h2>
-        <form onSubmit={(e) => {
-          e.preventDefault();
-          if (expenseDesc && expenseAmount && participants.length > 0) {
-            setExpenses([...expenses, { description: expenseDesc, amount: Number(expenseAmount), paidBy: expensePaidBy || people[0], participants: participants }]);
-            setExpenseDesc(''); setExpenseAmount('');
-          }
-        }}>
-          <input placeholder={t.description} value={expenseDesc} onChange={(e) => setExpenseDesc(e.target.value)} style={inputStyle} />
-          <input type="number" placeholder={t.amount} value={expenseAmount} onChange={(e) => setExpenseAmount(e.target.value === '' ? '' : Number(e.target.value))} style={inputStyle} />
-          
-          <div style={{ marginBottom: '15px' }}>
-            <span style={{ fontSize: '14px', color: '#86868b' }}>{t.paidBy}</span>
-            <select value={expensePaidBy} onChange={(e) => setExpensePaidBy(e.target.value)} style={{ ...inputStyle, marginBottom: '15px' }}>
-              {people.map(p => <option key={p} value={p}>{p}</option>)}
-            </select>
+        <h1 style={{ textAlign: 'center', marginBottom: '30px', color: '#43302e' }}>{t.title}</h1>
 
-            <span style={{ fontSize: '14px', color: '#86868b', display: 'block', marginBottom: '8px' }}>{t.splitWith}</span>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '15px' }}>
-              {people.map(p => (
-                <label key={p} style={{ fontSize: '14px', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={participants.includes(p)} onChange={() => setParticipants(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p])} style={{ marginRight: '5px' }} />
-                  {p}
-                </label>
-              ))}
-            </div>
+        {/* 1. 成員管理 */}
+        <section style={sectionStyle}>
+          <h2 style={{ fontSize: '18px', marginBottom: '15px', color: '#43302e' }}>{t.manageMembers}</h2>
+          <form onSubmit={handleAddPerson}>
+            <input value={newPerson} onChange={(e) => setNewPerson(e.target.value)} placeholder={t.enterName} style={inputStyle} />
+            <button type="submit" style={mainBtnStyle}>{t.addMember}</button>
+          </form>
+          <div style={{ marginTop: '15px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            {people.map(p => (
+              <span key={p} style={{ background: '#fff', padding: '6px 12px', borderRadius: '20px', fontSize: '14px', display: 'flex', alignItems: 'center', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
+                {p}
+                <button onClick={() => removePerson(p)} style={{ background: 'none', border: 'none', color: '#ff3b30', marginLeft: '6px', cursor: 'pointer', fontSize: '18px', lineHeight: '1' }}>×</button>
+              </span>
+            ))}
           </div>
-          <button type="submit" style={buttonStyle}>{t.addToBill}</button>
-        </form>
-
-        {expenses.map((exp, i) => (
-          <div key={i} style={{ fontSize: '13px', color: '#666', marginTop: '8px' }}>
-            📍 {exp.description}: ${exp.amount} ({exp.paidBy})
-          </div>
-        ))}
-      </section>
-
-      <button onClick={async () => {
-        setIsLoading(true);
-        try {
-          const res = await fetch('https://split-bill-v9je.onrender.com/calculate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ people, expenses }),
-          });
-          const data = await res.json();
-          setResults(data);
-        } catch (e) { alert(t.errorServer); } finally { setIsLoading(false); }
-      }} disabled={!isReadyToCalculate || isLoading} style={{ ...buttonStyle, backgroundColor: isReadyToCalculate ? '#4a69b3' : '#a1a1a6', padding: '15px', fontSize: '18px' }}>
-        {isLoading ? t.calculating : t.calculate}
-      </button>
-
-      {results && (
-        <section style={{ background: '#f5f5f7', padding: '20px', borderRadius: '16px', marginTop: '20px', marginBottom: '50px' }}>
-          <h2 style={{ fontSize: '18px', marginBottom: '15px' }}>{t.settlementPlan}</h2>
-          {results.transactions.map((trans: any, i: number) => <ResultRow key={i} trans={trans} t={t} />)}
         </section>
-      )}
+
+        {/* 2. 新增支出 */}
+        <section style={sectionStyle}>
+          <h2 style={{ fontSize: '18px', marginBottom: '15px', color: '#43302e' }}>{t.addExpense}</h2>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            if (expenseDesc && expenseAmount && participants.length > 0) {
+              setExpenses([...expenses, { description: expenseDesc, amount: Number(expenseAmount), paidBy: expensePaidBy || people[0], participants: participants }]);
+              setExpenseDesc(''); setExpenseAmount('');
+            }
+          }}>
+            <input placeholder={t.description} value={expenseDesc} onChange={(e) => setExpenseDesc(e.target.value)} style={inputStyle} />
+            <input type="number" placeholder={t.amount} value={expenseAmount} onChange={(e) => setExpenseAmount(e.target.value === '' ? '' : Number(e.target.value))} style={inputStyle} />
+            
+            <div style={{ marginBottom: '15px' }}>
+              <span style={{ fontSize: '14px', color: '#43302e', fontWeight: '500' }}>{t.paidBy}</span>
+              <select value={expensePaidBy} onChange={(e) => setExpensePaidBy(e.target.value)} style={{ ...inputStyle, marginTop: '5px' }}>
+                {people.map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+
+              <span style={{ fontSize: '14px', color: '#43302e', fontWeight: '500', display: 'block', marginTop: '10px', marginBottom: '8px' }}>{t.splitWith}</span>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                {people.map(p => (
+                  <label key={p} style={{ fontSize: '14px', display: 'flex', alignItems: 'center', cursor: 'pointer', color: '#43302e' }}>
+                    <input type="checkbox" checked={participants.includes(p)} onChange={() => setParticipants(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p])} style={{ marginRight: '5px' }} />
+                    {p}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <button type="submit" style={mainBtnStyle}>{t.addToBill}</button>
+          </form>
+
+          {/* 已加入項目清單與刪除按鈕 */}
+          <div style={{ marginTop: '20px' }}>
+            {expenses.map((exp, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.5)', padding: '8px 12px', borderRadius: '8px', marginBottom: '8px' }}>
+                <span style={{ fontSize: '13px', color: '#43302e' }}>📍 {exp.description}: ${exp.amount} ({exp.paidBy})</span>
+                <button onClick={() => removeExpense(i)} style={{ background: 'none', border: 'none', color: '#ff3b30', cursor: 'pointer', fontSize: '16px' }}>🗑️</button>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* 計算按鈕 */}
+        <button 
+          onClick={async () => {
+            setIsLoading(true);
+            try {
+              const res = await fetch('https://split-bill-v9je.onrender.com/calculate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ people, expenses }),
+              });
+              const data = await res.json();
+              setResults(data);
+            } catch (e) { alert(t.errorServer); } finally { setIsLoading(false); }
+          }} 
+          disabled={!isReadyToCalculate || isLoading} 
+          style={{ ...mainBtnStyle, backgroundColor: isReadyToCalculate ? '#43302e' : '#a1a1a6', padding: '15px', fontSize: '18px', marginBottom: '40px' }}
+        >
+          {isLoading ? t.calculating : t.calculate}
+        </button>
+
+        {/* 結算結果 */}
+        {results && (
+          <section style={{ background: '#fff', padding: '20px', borderRadius: '20px', marginBottom: '50px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}>
+            <h2 style={{ fontSize: '18px', marginBottom: '15px', color: '#43302e' }}>{t.settlementPlan}</h2>
+            {results.transactions.map((trans: any, i: number) => <ResultRow key={i} trans={trans} t={t} />)}
+          </section>
+        )}
+      </div>
     </div>
   );
 }
