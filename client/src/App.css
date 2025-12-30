@@ -10,10 +10,17 @@ body {
   justify-content: center;
 }
 
-/* 強制所有輸入框與按鈕寬度一致，且不被 padding 撐破 */
-input, select, button {
-  box-sizing: border-box !important; 
-  width: 100% !important;
+/* 移除 button 的 100% 限制，只保留輸入框的寬度 */
+input, select {
+  box-sizing: border-box; 
+  width: 100%;
+}
+
+/* 讓原本需要 100% 的主按鈕改用 class 來控制，或者在 JSX 中用 style 指定 */
+/* 這裡我們先放開全局按鈕的 100% 設定 */
+button {
+  box-sizing: border-box;
+  width: auto; /* 改成自動寬度 */
 }
 
 /* 讓成員標籤不要變 100% 寬 */
