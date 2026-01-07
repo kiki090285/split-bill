@@ -17,7 +17,7 @@ const translations = {
     joinRoom: "加入群組",
     enterRoomId: "輸入 6 位邀請碼",
     roomIdIs: "邀請碼：",
-    copied: "已複製邀請碼！",
+    copied: "已複製！",
     manageMembers: "1. 成員管理",
     enterName: "輸入姓名",
     addMember: "新增成員",
@@ -32,6 +32,9 @@ const translations = {
     settlementPlan: "結算方案",
     saveStatus: "確認付款",
     saved: "已付款 ✓",
+    bankTitle: "設定收款帳號",
+    bankPlaceholder: "輸入銀行/帳號",
+    copyBank: "複製帳號",
     errorServer: "連線失敗，請檢查後端狀態。"
   },
   en: {
@@ -40,7 +43,7 @@ const translations = {
     joinRoom: "Join Room",
     enterRoomId: "Enter 6-digit code",
     roomIdIs: "Code: ",
-    copied: "Code Copied!",
+    copied: "Copied!",
     manageMembers: "1. Members",
     enterName: "Enter name",
     addMember: "Add Member",
@@ -55,28 +58,11 @@ const translations = {
     settlementPlan: "Settlement Plan",
     saveStatus: "Mark as Paid",
     saved: "Paid ✓",
+    bankTitle: "Bank Settings",
+    bankPlaceholder: "Bank info",
+    copyBank: "Copy Bank",
     errorServer: "Connection error."
   }
-};
-
-const ResultRow = ({ trans, t, isPaid, onToggle }: any) => {
-  return (
-    <div style={{ 
-      backgroundColor: isPaid ? '#f2f2f7' : '#fff', 
-      padding: '15px', borderRadius: '12px', marginBottom: '10px', 
-      border: '1px solid #d2d2d7', transition: 'all 0.3s ease'
-    }}>
-      <div style={{ fontSize: '16px', marginBottom: '10px', fontWeight: 'bold', color: '#43302e' }}>
-        {trans.from} ➔ {trans.to}: <span style={{ color: '#4a69b3' }}>${trans.amount.toFixed(2)}</span>
-      </div>
-      <button onClick={onToggle} style={{ 
-        width: '100%', padding: '12px', borderRadius: '8px', border: 'none', 
-        backgroundColor: isPaid ? '#34c759' : '#43302e', color: 'white', fontWeight: 'bold', cursor: 'pointer'
-      }}>
-        {isPaid ? t.saved : t.saveStatus}
-      </button>
-    </div>
-  );
 };
 
 function App() {
@@ -89,29 +75,36 @@ function App() {
   const [newPerson, setNewPerson] = useState('');
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [paidTransactions, setPaidTransactions] = useState<string[]>([]);
+  const [bankAccounts, setBankAccounts] = useState<Record<string, string>>({}); 
+  const [showBankModal, setShowBankModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<any>(null);
 
-  // 支出表單狀態
   const [expenseDesc, setExpenseDesc] = useState('');
   const [expenseAmount, setExpenseAmount] = useState<number | ''>('');
   const [expensePaidBy, setExpensePaidBy] = useState<string>('');
   const [participants, setParticipants] = useState<string[]>([]);
 
+  // 統一背景顏色設定為 #c1d8e8
   const sectionStyle: React.CSSProperties = { background: '#c1d8e8', padding: '20px', borderRadius: '20px', marginBottom: '20px' };
   const inputStyle: React.CSSProperties = { width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #d2d2d7', marginBottom: '10px', boxSizing: 'border-box' };
   const mainBtnStyle: React.CSSProperties = { width: '100%', padding: '12px', borderRadius: '10px', border: 'none', backgroundColor: '#43302e', color: 'white', fontWeight: 'bold', cursor: 'pointer' };
 
-  const syncWithServer = useCallback(async (updatedPeople: string[], updatedExpenses: Expense[], updatedPaid: string[]) => {
+  const syncWithServer = useCallback(async (updatedPeople: string[], updatedExpenses: Expense[], updatedPaid: string[], updatedBanks?: any) => {
     if (!roomId) return;
     try {
       await fetch(`${API_BASE}/room/${roomId}/sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ people: updatedPeople, expenses: updatedExpenses, paidTransactions: updatedPaid }),
+        body: JSON.stringify({ 
+          people: updatedPeople, 
+          expenses: updatedExpenses, 
+          paidTransactions: updatedPaid,
+          bankAccounts: updatedBanks || bankAccounts 
+        }),
       });
     } catch (e) { console.error(e); }
-  }, [roomId]);
+  }, [roomId, bankAccounts]);
 
   useEffect(() => {
     if (!roomId) return;
@@ -123,6 +116,7 @@ function App() {
           setPeople(data.people || []);
           setExpenses(data.expenses || []);
           setPaidTransactions(data.paidTransactions || []);
+          setBankAccounts(data.bankAccounts || {});
         }
       } catch (e) { console.error(e); }
     }, 3000);
@@ -147,7 +141,6 @@ function App() {
       const updated = [...expenses, newExp];
       setExpenses(updated);
       syncWithServer(people, updated, paidTransactions);
-      // 只清空輸入框，不影響 list
       setExpenseDesc(''); setExpenseAmount(''); setParticipants([]);
     }
   };
@@ -180,16 +173,48 @@ function App() {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f7', padding: '20px' }}>
       <div style={{ maxWidth: '500px', margin: '0 auto' }}>
-        {/* 頂部切換語言與邀請碼 */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-           <div style={{ backgroundColor: '#43302e', color: 'white', padding: '8px 16px', borderRadius: '20px', fontSize: '14px' }}>
+        
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'center' }}>
+          <div style={{ backgroundColor: '#43302e', color: 'white', padding: '8px 16px', borderRadius: '20px', fontSize: '14px' }}>
             🏠 {t.roomIdIs}{roomId}
           </div>
-          <button onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')} style={{ background: 'none', border: '1px solid #43302e', borderRadius: '15px', cursor: 'pointer', padding: '4px 10px' }}>
-            🌐 {lang === 'zh' ? 'English' : '中文'}
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button onClick={() => setShowBankModal(true)} style={{ background: '#fff', border: '1px solid #43302e', borderRadius: '15px', cursor: 'pointer', padding: '6px 12px' }}>
+              🏦
+            </button>
+            <button onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')} style={{ background: '#fff', border: '1px solid #43302e', borderRadius: '15px', cursor: 'pointer', padding: '6px 12px', fontSize: '13px' }}>
+              🌐 {lang === 'zh' ? 'En' : '中'}
+            </button>
+          </div>
         </div>
 
+        {showBankModal && (
+          <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+            <div style={{ background: '#fff', padding: '25px', borderRadius: '20px', width: '90%', maxWidth: '350px' }}>
+              <h3>{t.bankTitle}</h3>
+              {people.map(person => (
+                <div key={person} style={{ marginBottom: '10px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 'bold' }}>{person}</label>
+                  <input 
+                    placeholder={t.bankPlaceholder} 
+                    value={bankAccounts[person] || ''} 
+                    onChange={(e) => {
+                      const newBanks = { ...bankAccounts, [person]: e.target.value };
+                      setBankAccounts(newBanks);
+                    }} 
+                    style={{ ...inputStyle, marginBottom: '5px', padding: '8px' }}
+                  />
+                </div>
+              ))}
+              <button onClick={() => {
+                syncWithServer(people, expenses, paidTransactions, bankAccounts);
+                setShowBankModal(false);
+              }} style={mainBtnStyle}>OK</button>
+            </div>
+          </div>
+        )}
+
+        {/* 區塊 1：成員管理 */}
         <section style={sectionStyle}>
           <h2>{t.manageMembers}</h2>
           <form onSubmit={handleAddPerson} style={{ display: 'flex', gap: '10px' }}>
@@ -209,7 +234,8 @@ function App() {
           </div>
         </section>
 
-        <section style={{ ...sectionStyle, background: '#e2eafc' }}>
+        {/* 區塊 2：新增支出 (顏色已改為與區塊 1 一致) */}
+        <section style={sectionStyle}>
           <h2>{t.addExpense}</h2>
           <form onSubmit={handleAddExpense}>
             <input value={expenseDesc} onChange={(e) => setExpenseDesc(e.target.value)} placeholder={t.description} style={inputStyle} />
@@ -232,7 +258,6 @@ function App() {
             <button type="submit" style={mainBtnStyle}>{t.addToBill}</button>
           </form>
           
-          {/* 顯示已加入的清單 */}
           <div style={{ marginTop: '15px' }}>
             {expenses.map((exp, i) => (
               <div key={i} style={{ background: 'rgba(255,255,255,0.4)', padding: '10px', borderRadius: '8px', marginBottom: '5px', fontSize: '13px', display: 'flex', justifyContent: 'space-between' }}>
@@ -261,10 +286,38 @@ function App() {
             <h2 style={{ fontSize: '18px', marginBottom: '15px' }}>{t.settlementPlan}</h2>
             {results.transactions.map((trans: any, i: number) => {
               const transId = `${trans.from}-${trans.to}-${trans.amount.toFixed(2)}`;
-              return <ResultRow key={i} trans={trans} t={t} isPaid={paidTransactions.includes(transId)} onToggle={() => {
-                const newPaid = paidTransactions.includes(transId) ? paidTransactions.filter(id => id !== transId) : [...paidTransactions, transId];
-                setPaidTransactions(newPaid); syncWithServer(people, expenses, newPaid);
-              }} />;
+              const isPaid = paidTransactions.includes(transId);
+              const toBank = bankAccounts[trans.to];
+
+              return (
+                <div key={i} style={{ 
+                  backgroundColor: isPaid ? '#f2f2f7' : '#fff', 
+                  padding: '15px', borderRadius: '12px', marginBottom: '10px', 
+                  border: '1px solid #d2d2d7', transition: 'all 0.3s ease', opacity: isPaid ? 0.7 : 1
+                }}>
+                  <div style={{ fontSize: '16px', marginBottom: '10px', fontWeight: 'bold', color: '#43302e' }}>
+                    {trans.from} ➔ {trans.to}: <span style={{ color: '#4a69b3' }}>${trans.amount.toFixed(2)}</span>
+                    {toBank && !isPaid && (
+                      <button 
+                        onClick={() => { navigator.clipboard.writeText(toBank); alert(t.copied); }}
+                        style={{ marginLeft: '10px', padding: '2px 8px', fontSize: '11px', borderRadius: '5px', cursor: 'pointer', border: '1px solid #43302e', background: '#fff' }}
+                      >
+                        📋 {t.copyBank}
+                      </button>
+                    )}
+                  </div>
+                  <button onClick={() => {
+                    const newPaid = isPaid ? paidTransactions.filter(id => id !== transId) : [...paidTransactions, transId];
+                    setPaidTransactions(newPaid);
+                    syncWithServer(people, expenses, newPaid);
+                  }} style={{ 
+                    width: '100%', padding: '12px', borderRadius: '8px', border: 'none', 
+                    backgroundColor: isPaid ? '#34c759' : '#43302e', color: 'white', fontWeight: 'bold', cursor: 'pointer'
+                  }}>
+                    {isPaid ? t.saved : t.saveStatus}
+                  </button>
+                </div>
+              );
             })}
           </section>
         )}
