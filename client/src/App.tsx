@@ -91,7 +91,7 @@ const ResultRow = ({ trans, t, isPaid, onToggle }: any) => {
 };
 
 function App() {
-  const [lang, setLang] = useState<'zh' | 'en'>('zh');
+  const [lang] = useState<'zh' | 'en'>('zh'); // 移除 setLang 避免 Build 錯誤
   const t = translations[lang];
 
   const [roomId, setRoomId] = useState<string | null>(null);
@@ -102,7 +102,6 @@ function App() {
   const [paidTransactions, setPaidTransactions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // 支出表單狀態
   const [expenseDesc, setExpenseDesc] = useState('');
   const [expenseAmount, setExpenseAmount] = useState<number | ''>('');
   const [expensePaidBy, setExpensePaidBy] = useState<string>('');
@@ -163,22 +162,14 @@ function App() {
 
   const handleAddExpense = (e: React.FormEvent) => {
     e.preventDefault();
-    if (expenseDesc && expenseAmount && expensePaidBy && participants.length > 0) {
-      const newExpense: Expense = {
-        description: expenseDesc,
-        amount: Number(expenseAmount),
-        paidBy: expensePaidBy,
-        participants: participants
-      };
-      const updated = [...expenses, newExpense];
-      setExpenses(updated);
-      syncWithServer(people, updated, paidTransactions);
-      
-      // 重置欄位
-      setExpenseDesc('');
-      setExpenseAmount('');
-    } else {
-      alert("請填寫完整資訊並選擇參與者");
+    if (expenseDesc && expenseAmount && expensePaidBy) {
+      // 如果沒選參與者，預設為所有人
+      const selectedParticipants = participants.length > 0 ? participants : people;
+      const newExpense = { description: expenseDesc, amount: Number(expenseAmount), paidBy: expensePaidBy, participants: selectedParticipants };
+      const updatedExpenses = [...expenses, newExpense];
+      setExpenses(updatedExpenses);
+      syncWithServer(people, updatedExpenses, paidTransactions);
+      setExpenseDesc(''); setExpenseAmount(''); setParticipants([]);
     }
   };
 
@@ -224,9 +215,7 @@ function App() {
           <div style={{ backgroundColor: '#43302e', color: 'white', padding: '8px 16px', borderRadius: '20px', fontSize: '14px', fontWeight: 'bold' }}>
             🏠 {t.roomIdIs}{roomId}
           </div>
-          <button onClick={copyToClipboard} style={{ border: '1px solid #d2d2d7', background: 'white', borderRadius: '50%', width: '35px', height: '35px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            📋
-          </button>
+          <button onClick={copyToClipboard} style={{ border: '1px solid #d2d2d7', background: 'white', borderRadius: '50%', width: '35px', height: '35px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>📋</button>
         </div>
 
         <section style={sectionStyle}>
@@ -248,7 +237,6 @@ function App() {
           </div>
         </section>
 
-        {/* 2. 新增支出區塊 */}
         <section style={{ ...sectionStyle, background: '#e2eafc' }}>
           <h2>{t.addExpense}</h2>
           <form onSubmit={handleAddExpense}>
@@ -278,35 +266,15 @@ function App() {
             </div>
             <button type="submit" style={mainBtnStyle}>{t.addToBill}</button>
           </form>
-
-          <div style={{ marginTop: '15px' }}>
-            {expenses.map((exp, i) => (
-              <div key={i} style={{ background: 'rgba(255,255,255,0.5)', padding: '10px', borderRadius: '10px', marginBottom: '8px', fontSize: '14px', display: 'flex', justifyContent: 'space-between' }}>
-                <span>{exp.description}: <b>${exp.amount}</b> ({exp.paidBy} 支)</span>
-                <button onClick={() => {
-                  const updated = expenses.filter((_, idx) => idx !== i);
-                  setExpenses(updated);
-                  syncWithServer(people, updated, paidTransactions);
-                }} style={{ border: 'none', color: '#ff3b30', background: 'none', cursor: 'pointer' }}>×</button>
-              </div>
-            ))}
-          </div>
         </section>
 
-        <button 
-          onClick={async () => {
-            setIsLoading(true);
-            const res = await fetch(`${API_BASE}/calculate`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ people, expenses }),
-            });
-            const data = await res.json();
-            setResults(data);
-            setIsLoading(false);
-          }} 
-          style={{ ...mainBtnStyle, marginBottom: '40px' }}
-        >
+        <button onClick={async () => {
+          setIsLoading(true);
+          const res = await fetch(`${API_BASE}/calculate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ people, expenses }), });
+          const data = await res.json();
+          setResults(data);
+          setIsLoading(false);
+        }} style={{ ...mainBtnStyle, marginBottom: '40px' }}>
           {isLoading ? t.calculating : t.calculate}
         </button>
 
@@ -316,21 +284,12 @@ function App() {
             {results.transactions.map((trans: any, i: number) => {
               const transId = `${trans.from}-${trans.to}-${trans.amount.toFixed(2)}`;
               return (
-                <ResultRow 
-                  key={i} 
-                  trans={trans} 
-                  t={t} 
-                  isPaid={paidTransactions.includes(transId)}
-                  onToggle={() => {
-                    const isNowPaid = paidTransactions.includes(transId);
-                    const newPaid = isNowPaid
-                      ? paidTransactions.filter(id => id !== transId)
-                      : [...paidTransactions, transId];
-                    
-                    setPaidTransactions(newPaid);
-                    syncWithServer(people, expenses, newPaid);
-                  }}
-                />
+                <ResultRow key={i} trans={trans} t={t} isPaid={paidTransactions.includes(transId)} onToggle={() => {
+                  const isNowPaid = paidTransactions.includes(transId);
+                  const newPaid = isNowPaid ? paidTransactions.filter(id => id !== transId) : [...paidTransactions, transId];
+                  setPaidTransactions(newPaid);
+                  syncWithServer(people, expenses, newPaid);
+                }} />
               );
             })}
           </section>
