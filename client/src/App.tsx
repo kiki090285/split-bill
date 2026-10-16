@@ -263,7 +263,29 @@ function App() {
             <button type="submit" style={mainBtnStyle}>{t.addToBill}</button>
           </form>
         </section>
-
+        {expenses.length > 0 && (
+          <section style={sectionStyle}>
+            <h2 style={{ fontSize: '18px' }}>{t.expenseList}</h2>
+            {expenses.map((expense, index) => (
+              <div
+                key={index}
+                style={{
+                  background: '#fff',
+                  padding: '15px',
+                  borderRadius: '12px',
+                  marginBottom: '10px',
+                  overflowWrap: 'anywhere'
+                }}
+              >
+                <strong>
+                  {expense.description} — ${expense.amount.toFixed(2)}
+                </strong>
+                <p>{t.paidBy}: {expense.paidBy}</p>
+                <p>{t.whoSplit} {expense.participants.join(', ')}</p>
+              </div>
+            ))}
+          </section>
+        )}
         <button onClick={async () => {
           setIsLoading(true);
           const res = await fetch(`${API_BASE}/calculate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ people, expenses }), });
